@@ -1,14 +1,10 @@
-dist: xenial
-addons:
-  snaps:
-  - name: dotnet-sdk
-    classic: true
-    channel: latest/beta
-sudo: required
 language: csharp
 mono: none
-
+dotnet: 3.1
+install:
+- cd src
+- dotnet restore
 script:
-  - sudo snap alias dotnet-sdk.dotnet dotnet
-  - cd src
-  - dotnet build
+- cd src
+- dotnet build
+- cd Chesster.Tests && dotnet test
