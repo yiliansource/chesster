@@ -28,7 +28,6 @@ url: "https://yiliansource.github.io/" # the base hostname & protocol for your s
 github_username: yiliansource
 
 # Build settings
-theme: just-the-docs
 remote_theme: pmarsceill/just-the-docs
 plugins:
   - jekyll-feed
