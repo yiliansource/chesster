@@ -5,6 +5,5 @@ install:
 - cd src
 - dotnet restore
 script:
-- cd src
 - dotnet build
 - cd Chesster.Tests && dotnet test
