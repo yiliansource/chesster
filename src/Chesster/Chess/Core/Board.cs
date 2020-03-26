@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Collections.Generic;
 
 namespace Chesster.Chess
 {
@@ -9,14 +8,12 @@ namespace Chesster.Chess
         public static Board Empty => new Board();
         public static Board Default => new Board(FenUtility.DefaultPosition);
 
-        public IReadOnlyCollection<Piece> Pieces => _pieces;
-
-        private Piece[] _pieces;
+        public Piece[] Pieces { get; }
 
         public Piece this[Square sq]
         {
-            get => _pieces[sq.BoardIndex];
-            set => _pieces[sq.BoardIndex] = value;
+            get => Pieces[sq.BoardIndex];
+            set => Pieces[sq.BoardIndex] = value;
         }
 
         public Board() : this(new Piece[64]) { }
@@ -25,7 +22,7 @@ namespace Chesster.Chess
             if (pieces.Length != 64)
                 throw new ArgumentException("The chessboard needs to contain 64 pieces.");
 
-            _pieces = pieces;
+            Pieces = (Piece[])pieces.Clone();
         }
         public Board(string fen) : this(FenUtility.FenToPieces(fen)) { }
 
@@ -33,14 +30,17 @@ namespace Chesster.Chess
         {
             this[m.Destination] = this[m.Source];
             this[m.Source] = Piece.None;
+
+            if (m.Promotion != Piece.None)
+                this[m.Destination] = m.Promotion.TransformColor(this[m.Destination].IsWhite());
         }
 
         public string ToFen()
-            => FenUtility.PiecesToFen(_pieces);
+            => FenUtility.PiecesToFen(Pieces);
         public override string ToString()
             => ToFen();
 
         public static Board Invert(Board b)
-            => new Board(b._pieces.Reverse().ToArray());
+            => new Board(b.Pieces.Reverse().ToArray());
     }
 }

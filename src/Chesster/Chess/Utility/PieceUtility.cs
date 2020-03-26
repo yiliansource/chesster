@@ -30,5 +30,17 @@
             => PieceToCharacter(p);
         public static Piece ToPiece(this char c)
             => CharacterToPiece(c);
+
+        public static bool IsWhite(this Piece p)
+            => (int)p >= 1 && (int)p <= 6;
+        public static bool IsBlack(this Piece p)
+            => (int)p >= 7 && (int)p <= 12;
+
+        public static Piece TransformColor(this Piece p, bool toWhite)
+        {
+            return toWhite
+                ? (p.IsWhite() ? p : p - 6)
+                : (p.IsBlack() ? p : p + 6);
+        }
     }
 }

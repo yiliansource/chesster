@@ -14,7 +14,7 @@ namespace Chesster.Chess.Tests
             {
                 { ("c2c4", new Move(new Square("c2"), new Square("c4"))) },
                 { ("f3f8", new Move(new Square("f3"), new Square("f8"))) },
-                { ("a1h8", new Move(new Square("a1"), new Square("h8"))) }
+                { ("a1h8q", new Move(new Square("a1"), new Square("h8"), Piece.BlackQueen)) }
             };
 
             foreach (var (notation, move) in cases)
@@ -47,6 +47,22 @@ namespace Chesster.Chess.Tests
 
             Assert.Equal(Piece.WhiteQueen, b[new Square("h8")]);
             Assert.Equal(Piece.None, b[new Square("a1")]);
+        }
+
+        [Fact]
+        public void TestPiecePromotion()
+        {
+            Board b = new Board();
+            b[new Square("a7")] = Piece.WhitePawn;
+            b[new Square("h2")] = Piece.BlackPawn;
+
+            Move m = new Move("a7a8q");
+            b.Perform(m);
+            m = new Move("h2h1n");
+            b.Perform(m);
+
+            Assert.Equal(Piece.WhiteQueen, b[new Square("a8")]);
+            Assert.Equal(Piece.BlackKnight, b[new Square("h1")]);
         }
     }
 }

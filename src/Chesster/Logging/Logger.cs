@@ -9,6 +9,11 @@ namespace Chesster.Logging
 
         private static List<LogOutput> _outputs = new List<LogOutput>();
 
+        static Logger()
+        {
+            AppDomain.CurrentDomain.ProcessExit += (s, e) => Dispose();
+        }
+
         public static void RegisterOutput<T>() where T : LogOutput
             => RegisterOutput(Activator.CreateInstance<T>() as LogOutput);
         public static void RegisterOutput<T>(T output) where T : LogOutput

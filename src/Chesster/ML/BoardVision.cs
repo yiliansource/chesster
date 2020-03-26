@@ -40,10 +40,13 @@ namespace Chesster.ML
             model = BoardOrientationPredictionEngine.LoadModel(IO.OrientationModelPath);
             var orientationPrediction = BoardOrientationPredictionEngine.ClassifyBoard(model, board);
 
-            Logger.Info<BoardVision>($"Board orientation prediction yield a result of: {(orientationPrediction.PredictedLabel ? "inverted" : "normal")}.");
+            Logger.Info<BoardVision>($"Board orientation prediction yield a result of '{(orientationPrediction.PredictedLabel ? "inverted" : "normal")}'.");
 
             if (orientationPrediction.PredictedLabel)
+            {
                 board = Board.Invert(board);
+                Logger.Info<BoardVision>($"New board FEN: {board.ToFen()}");
+            }
 
             return board;
         }

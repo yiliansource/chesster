@@ -16,6 +16,8 @@ namespace Chesster
         public static readonly string PieceModelPath = Path.Combine(AssetRoot, "pieceModel.zip");
         public static readonly string OrientationModelPath = Path.Combine(AssetRoot, "orientationModel.zip");
 
+        public static readonly string StockfishPath = Path.Combine(AssetRoot, "stockfish.exe");
+
         public static string[] GetFiles(string path)
             => Directory.GetFiles(path);
         public static string[] GetFiles(string path, string filter)
