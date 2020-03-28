@@ -24,11 +24,6 @@ namespace Chesster.Training
         /// </summary>
         public int Size { get; }
         /// <summary>
-        /// The path to which the images should be output to.
-        /// <para>Note that the generator will place every image into a subfolder according to its <see cref="Piece"/>.</para>
-        /// </summary>
-        public string OutputPath { get; }
-        /// <summary>
         /// The spritesheet files that should be used during generation.
         /// </summary>
         public string[] Spritesheets { get; set; }
@@ -41,20 +36,16 @@ namespace Chesster.Training
         /// Creates a new training data generator for <see cref="Piece"/>s.
         /// </summary>
         /// <param name="size">The size at which the images should be generated.</param>
-        /// <param name="outputPath">The path to which the images should be output to.</param>
         /// <param name="spritesheets">The spritesheet files that should be used during generation.</param>
         /// <param name="backgrounds"></param>
-        public PieceImageGenerator(int size, string outputPath, string[] spritesheets, string[] backgrounds)
+        public PieceImageGenerator(int size, string[] spritesheets, string[] backgrounds)
         {
             if (size <= 0)
                 throw new ArgumentException("The size can not be zero or negative.");
-            if (string.IsNullOrEmpty(outputPath))
-                throw new ArgumentException("The output path can not be null or empty.");
             if (spritesheets == null || backgrounds == null || spritesheets.Length + backgrounds.Length < 2)
                 throw new ArgumentException("A minimum of one spritesheet and one background needs to be provided to the generator.");
 
             Size = size;
-            OutputPath = outputPath;
             Spritesheets = spritesheets;
             Backgrounds = backgrounds;
         }
@@ -62,17 +53,22 @@ namespace Chesster.Training
         /// <summary>
         /// Generates the piece images.
         /// </summary>
-        public void Generate()
+        public void Generate(string outputPath)
         {
+            if (string.IsNullOrEmpty(outputPath))
+                throw new ArgumentException("The output path can not be null or empty.");
+
             Piece[] pieces = (Piece[])Enum.GetValues(typeof(Piece));
             Bitmap[] backgrounds = Backgrounds.Select(bg => new Bitmap(bg)).ToArray();
             Bitmap[] spritesheets = Spritesheets.Select(ss => new Bitmap(ss)).ToArray();
 
             Dictionary<Piece, int> variantIndices = pieces.ToDictionary(p => p, p => 0);
 
+            // Ensure output directories exist.
             foreach (Piece p in pieces)
-                Directory.CreateDirectory(Path.Combine(OutputPath, p.ToString().ToLower()));
+                Directory.CreateDirectory(Path.Combine(outputPath, p.ToString().ToLower()));
 
+            // Create permutations between spritesheets and backgrounds
             foreach (Bitmap spritesheet in spritesheets)
             {
                 if (spritesheet.Height < Size)
@@ -86,17 +82,19 @@ namespace Chesster.Training
                         Bitmap variant = new Bitmap(Size, Size);
                         using (var graphics = Graphics.FromImage(variant))
                         {
+                            // Draw the background ...
                             graphics.DrawImage(background,
                                 new Rectangle(0, 0, Size, Size),
                                 new Rectangle(0, 0, background.Height, background.Height),
                                 GraphicsUnit.Pixel);
+                            // ... and the current piece over it.
                             graphics.DrawImage(spritesheet,
                                 new Rectangle(0, 0, Size, Size),
                                 new Rectangle(xIndex * spritesheet.Height, 0, spritesheet.Height, spritesheet.Height), 
                                 GraphicsUnit.Pixel);
                         }
                         string variantName = $"{p.ToString().ToLower()}_{variantIndices[p]:000}.png";
-                        string variantPath = Path.Combine(OutputPath, p.ToString().ToLower(), variantName);
+                        string variantPath = Path.Combine(outputPath, p.ToString().ToLower(), variantName);
 
                         variant.Save(variantPath, ImageFormat.Png);
 

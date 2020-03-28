@@ -3,10 +3,19 @@ using System.Text;
 
 namespace Chesster.Chess
 {
+    /// <summary>
+    /// Provides utility to handle FEN notations.
+    /// </summary>
     public static class FenUtility
     {
+        /// <summary>
+        /// The default position, as a FEN notation.
+        /// </summary>
         public static string DefaultPosition { get; } = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+        /// <summary>
+        /// Converts the given FEN notation into a piece array, that can be used to create a <see cref="Board"/>.
+        /// </summary>
         public static Piece[] FenToPieces(string fen)
         {
             try
@@ -41,6 +50,9 @@ namespace Chesster.Chess
                 throw new FormatException("Invalid FEN position.");
             }
         }
+        /// <summary>
+        /// Converts the specified piece array into a FEN string. Only includes the pieces, no castling rights or anything.
+        /// </summary>
         public static string PiecesToFen(Piece[] pieces)
         {
             if (pieces.Length != 64)

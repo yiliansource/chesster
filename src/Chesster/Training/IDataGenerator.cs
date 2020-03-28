@@ -2,6 +2,6 @@
 {
     public interface IDataGenerator
     {
-        void Generate();
+        void Generate(string outputPath);
     }
 }

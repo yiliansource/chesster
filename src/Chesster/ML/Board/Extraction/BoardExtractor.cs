@@ -6,6 +6,9 @@ using System.Collections.Generic;
 
 namespace Chesster.ML
 {
+    /// <summary>
+    /// An extractor that can detect and extract chessboards from an image.
+    /// </summary>
     public class BoardExtractor
     {
         public enum BoardOption
@@ -14,13 +17,28 @@ namespace Chesster.ML
             Smallest
         }
 
+        /// <summary>
+        /// The maximum color difference that should be allowed for edge detection.
+        /// </summary>
         public float MaxColorDelta { get; set; } = 0.1f;
+        /// <summary>
+        /// The tolerance ratio that should be allowed for variations in tile sizes (due to artifacts or anti-aliasing).
+        /// </summary>
         public float SegmentRatioTolerance { get; set; } = 0.05f;
+        /// <summary>
+        /// The minimum size (in pixels) that a tile needs to have.
+        /// </summary>
         public int MinTileSize { get; set; } = 4;
+        /// <summary>
+        /// If true, the origin color that is compared against during the pseudo-floodfill is updated after each scanned pixel.
+        /// </summary>
         public bool AdaptColorDuringScan { get; set; } = true;
 
         private readonly string _imagePath;
 
+        /// <summary>
+        /// Creates an extractor for an image at the given path.
+        /// </summary>
         public BoardExtractor(string imagePath)
         {
             if (!File.Exists(imagePath))
@@ -29,8 +47,14 @@ namespace Chesster.ML
             _imagePath = imagePath;
         }
 
+        /// <summary>
+        /// Finds the largest chessboard in the image. Returns null if no image was found.
+        /// </summary>
         public Rectangle? FindChessboard()
             => FindChessboard(BoardOption.Largest);
+        /// <summary>
+        /// Finds the smallest or largest chessboard in the image. Returns null if no image was found.
+        /// </summary>
         public Rectangle? FindChessboard(BoardOption option)
         {
             Rectangle[] chessboards = FindChessboards();
@@ -46,6 +70,9 @@ namespace Chesster.ML
             };
         }
 
+        /// <summary>
+        /// Finds all chessboard in the image.
+        /// </summary>
         public Rectangle[] FindChessboards()
         {
             // TODO: Document, comment and optimize!

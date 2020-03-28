@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.IO;
+using System.Linq;
 using System.Collections.Generic;
 
 using Microsoft.ML;
@@ -7,28 +9,59 @@ using Chesster.Logging;
 
 namespace Chesster.ML
 {
-    public static class PiecePredictionEngine
+    /// <summary>
+    /// Supplies a prediction engine that can be used to detect pieces from images.
+    /// </summary>
+    public class PiecePredictionEngine : PredictionEngine<string, PiecePrediction>
     {
-        private static MLContext _context = new MLContext();
+        protected override string DefaultModelPath => IO.PieceModelPath;
+        protected override string DefaultTrainingDataPath => IO.PieceTrainingDataPath;
 
-        public static PiecePrediction ClassifyPiece(ITransformer model, string imagePath)
+        /// <summary>
+        /// Classifies the image at the given path and returns a prediction. Fails if no trained model has been created or loaded first.
+        /// </summary>
+        /// <param name="imagePath">The path of the image.</param>
+        public override PiecePrediction Classify(string imagePath)
         {
-            var predictor = _context.Model.CreatePredictionEngine<PieceData, PiecePrediction>(model);
-            Logger.Debug("Piece prediction engine created!");
-            return predictor.Predict(new PieceData { ImagePath = imagePath });
+            if (!IsLoaded)
+                throw new InvalidOperationException("No model has been trained or loaded.");
+
+            Microsoft.ML.PredictionEngine<PieceData, PiecePrediction> engine = _context.Model.CreatePredictionEngine<PieceData, PiecePrediction>(_model);
+            PiecePrediction prediction = engine.Predict(new PieceData { ImagePath = imagePath });
+
+            Logger.Debug<PiecePredictionEngine>($"Image {Path.GetFileName(imagePath)} was classified as: {prediction.PredictedLabel}");
+
+            return prediction;
         }
-        public static IEnumerable<PiecePrediction> ClassifyPieces(ITransformer model, string[] imagePaths)
+
+        /// <summary>
+        /// Bulk-classifies a sequence of images and returns corresponding predictions. Fails if no trained model has been created or loaded first.
+        /// </summary>
+        /// <param name="imagePaths">The paths of the images. The order of the elements will be retained in the returned predictions.</param>
+        public override PiecePrediction[] BulkClassify(string[] imagePaths)
         {
-            IDataView testData = _context.Data.LoadFromEnumerable(imagePaths.Select(path => new PieceData { ImagePath = path }));
-            IDataView predictions = model.Transform(testData);
+            if (!IsLoaded)
+                throw new InvalidOperationException("No model has been trained or loaded.");
 
-            Logger.Debug($"{imagePaths.Length} piece images were bulk-classified.");
+            IDataView classificationData = _context.Data.LoadFromEnumerable(imagePaths.Select(path => new PieceData { ImagePath = path }));
+            IDataView transformedData = _model.Transform(classificationData); 
+            PiecePrediction[] predictions = _context.Data.CreateEnumerable<PiecePrediction>(transformedData, false).ToArray();
 
-            return _context.Data.CreateEnumerable<PiecePrediction>(predictions, true);
+            Logger.Debug<PiecePredictionEngine>($"{imagePaths.Count()} piece images were bulk-classified.");
+
+            return predictions;
         }
 
-        public static ITransformer CreateTrainedModel(string trainingDataPath, string modelOutputPath)
+        /// <summary>
+        /// Creates a trained model from existing specified training data.
+        /// Training data can be generated via the <see cref="Training.PieceImageGenerator"/>.
+        /// </summary>
+        /// <param name="trainingDataPath">The directory where the training data is located.</param>
+        public override PredictionEngine<string, PiecePrediction> CreateTrainedModel(string trainingDataPath)
         {
+            if (!Directory.Exists(trainingDataPath))
+                throw new DirectoryNotFoundException("The specified training data directory was not found.");
+
             IEstimator<ITransformer> pipeline = _context.Transforms
                 // Load the images from their data paths into the 'input' data column
                 .LoadImages(outputColumnName: "input", imageFolder: "images", inputColumnName: nameof(PieceData.ImagePath))
@@ -43,23 +76,16 @@ namespace Chesster.ML
                 .Append(_context.MulticlassClassification.Trainers.LbfgsMaximumEntropy(labelColumnName: "LabelKey", featureColumnName: "input"))
                 .Append(_context.Transforms.Conversion.MapKeyToValue(outputColumnName: "PredictedLabel"));
 
-            Logger.Debug("Created the estimator pipeline for piece prediction model.");
+            Logger.Debug<PiecePredictionEngine>("Created the estimator pipeline for piece prediction model.");
 
             IEnumerable<PieceData> trainingData = PieceData.LoadFromRoot(trainingDataPath);
-            IDataView trainingDataView = _context.Data.LoadFromEnumerable(trainingData);
-            ITransformer model = pipeline.Fit(trainingDataView);
 
-            Logger.Debug("Piece prediction model was trained!");
+            _trainingDataView = _context.Data.LoadFromEnumerable(trainingData);
+            _model = pipeline.Fit(_trainingDataView);
 
-            _context.Model.Save(model, trainingDataView.Schema, modelOutputPath);
+            Logger.Debug<PiecePredictionEngine>("Piece prediction model was trained!");
 
-            Logger.Debug($"Trained model was saved to {modelOutputPath}.");
-
-            return model;
-        }
-        public static ITransformer LoadModel(string modelPath)
-        {
-            return _context.Model.Load(modelPath, out _);
+            return this;
         }
     }
 }

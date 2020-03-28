@@ -8,7 +8,7 @@
 </h1>
 
 <h2 align="center" style="margin:-10px;">From Screenshot to Chessboard</h2>
-<h4 align="center">A .NET Core library for recognizing chessboard positions using neural networks.</h4>
+<h4 align="center">A .NET Core library with functionality to take a simple screenshot of a chessboard to a fully-evaluated position.</h4>
 
 <p align="center">
   <a href="https://travis-ci.com/YilianSource/chesster">

@@ -2,6 +2,9 @@
 
 namespace Chesster
 {
+    /// <summary>
+    /// Represents a simple implementation of a two-way dictionary.
+    /// </summary>
     public class Map<T1, T2>
     {
         public T2 this[T1 v]

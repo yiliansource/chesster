@@ -20,13 +20,17 @@ namespace Chesster
             Logger.RegisterOutput<FileLogOutput>();
             Logger.Settings.MinimumLevel = LogLevel.Info;
 
-            //new PieceImageGenerator(64, IO.TrainingDataPath, IO.GetFiles(IO.SpritesheetsPath, "*.png|*.jpg"), IO.GetFiles(IO.BackgroundsPath, "*.png|*.jpg")).Generate();
-            //new BoardOrientationGenerator(IO.Combine(IO.AssetRoot, "fens.txt")).Generate();
+            //new PieceImageGenerator(64, IO.GetFiles(IO.SpritesheetsPath, "*.png|*.jpg"), IO.GetFiles(IO.BackgroundsPath, "*.png|*.jpg")).Generate(IO.PieceTrainingDataPath);
+            //new BoardOrientationGenerator(IO.Combine(IO.AssetRoot, "fens.txt")).Generate(IO.BoardOrientationTrainingDataPath);
             //
-            //PiecePredictionEngine.CreateTrainedModel(IO.TrainingDataPath, IO.PieceModelPath);
-            //BoardOrientationPredictionEngine.CreateTrainedModel(IO.Combine(IO.TrainingDataPath, "orientations.csv"), IO.OrientationModelPath);
-
-            Board board = BoardVision.PredictBoard(@"D:\YilianSource\chesster\chesster-core\verifying\example05.png");
+            //new PiecePredictionEngine()
+            //    .CreateTrainedModel()
+            //    .SaveModel();
+            //new BoardOrientationPredictionEngine()
+            //    .CreateTrainedModel()
+            //    .SaveModel();
+            
+            Board board = BoardVision.PredictBoard(@"D:\YilianSource\chesster\chesster-core\verifying\example03.png");
 
             Console.WriteLine(Evaluator.EvaluateWhite<StockfishEngine>(board).ToString(board));
             Console.WriteLine(Evaluator.EvaluateBlack<StockfishEngine>(board).ToString(board));

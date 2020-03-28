@@ -5,9 +5,12 @@ using Chesster.Logging;
 
 namespace Chesster.Chess.Engines
 {
+    /// <summary>
+    /// A wrapper for the Stockfish engine.
+    /// </summary>
     public class StockfishEngine : UciEngine
     {
-        public override string EnginePath => IO.StockfishPath;
+        protected override string EnginePath => IO.StockfishPath;
 
         public override Evaluation Evaluate(string fen, bool isWhite, int depth)
         {
@@ -27,6 +30,7 @@ namespace Chesster.Chess.Engines
 
         private Evaluation EvaluateInfoString(string info, bool isWhite)
         {
+            // Helper method; extracts the next value after the specified key
             string ExtractNext(string key)
             {
                 int keyIndex = info.IndexOf(key);
@@ -37,6 +41,7 @@ namespace Chesster.Chess.Engines
                 int nextSpaceIndex = info.IndexOf(' ', valueIndex);
                 return info[valueIndex..nextSpaceIndex];
             }
+            // Helper method; extracts everything after the specified key
             string ExtractRunaway(string key)
             {
                 int keyIndex = info.LastIndexOf(key);
@@ -48,14 +53,20 @@ namespace Chesster.Chess.Engines
             }
 
             float score = 0;
-            string scoreCp = ExtractNext("cp");
-            if (!string.IsNullOrEmpty(scoreCp))
-                score = int.Parse(scoreCp) / 100f;
-
             int? mate = null;
-            string scoreMate = ExtractNext("mate");
-            if (!string.IsNullOrEmpty(scoreMate))
-                mate = int.Parse(scoreMate);
+
+            // Stockfish either returns a score based to centipawns or mating.
+            // Make sure to extract the given one.
+            switch (ExtractNext("score"))
+            {
+                case "cp": score = int.Parse(ExtractNext("cp")) / 100f; break;
+                case "mate": mate = int.Parse(ExtractNext("mate")); break;
+            }
+
+            // Stockfish passes score relative to the side that has the move.
+            // We want an absolute score, so we negate the value if black has the move.
+            if (!isWhite)
+                score *= -1;
 
             return new Evaluation
             {
@@ -65,9 +76,7 @@ namespace Chesster.Chess.Engines
                 Nodes = int.Parse(ExtractNext("nodes")),
                 NodesPerSecond = int.Parse(ExtractNext("nps")),
 
-                RelativeScore = score,
-                AbsoluteScore = score * (isWhite ? 1 : -1),
-
+                Score = score,
                 MateIn = mate,
 
                 Moves = ExtractRunaway("pv").Split(' ').Select(s => new Move(s)).ToArray()

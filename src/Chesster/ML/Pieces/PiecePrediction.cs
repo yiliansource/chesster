@@ -1,13 +1,21 @@
 ﻿using System.IO;
 using System.Linq;
 
-namespace Chesster
+namespace Chesster.ML
 {
-    public class PiecePrediction : PieceData
+    /// <summary>
+    /// A prediction of a chess piece.
+    /// </summary>
+    public sealed class PiecePrediction : PieceData, IModelPrediction<string>
     {
-        public float[] Score;
-
-        public string PredictedLabel;
+        /// <summary>
+        /// The confidence scores for the multiclass predictions.
+        /// </summary>
+        public float[] Score { get; set; }
+        /// <summary>
+        /// The predicted label of the piece, e.g. 'blackbishop'.
+        /// </summary>
+        public string PredictedLabel { get; set; }
 
         public override string ToString()
         {

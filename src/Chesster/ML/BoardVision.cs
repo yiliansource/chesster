@@ -1,44 +1,51 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using System.Linq;
-using System.Collections.Generic;
-
 using System.Drawing;
+using System.Collections.Generic;
 
 using Chesster.Chess;
 using Chesster.Logging;
 
 namespace Chesster.ML
 {
+    /// <summary>
+    /// Provides utility to classify a board from an image.
+    /// </summary>
     public class BoardVision
     {
-
+        /// <summary>
+        /// Predicts the board at the given path.
+        /// </summary>
         public static Board PredictBoard(string imagePath)
         {
             if (!File.Exists(imagePath))
                 throw new FileNotFoundException("An input file was not found at the given path.");
 
+            Logger.Info<BoardVision>($"Initializing vision process for file {Path.GetFileName(imagePath)}.");
+
+            // Search for and extract a board from the input image
             string tempboardPath = IO.Combine(IO.TemporaryBoardExtractionPath, "tempboard.png");
             if (!ExtractChessboard(imagePath, tempboardPath, out Size boardSize))
+                // If no chessboard was found, return null
                 return null;
 
+            // Using the board size, extract the individual squares
             string[] pieceImagePaths = ExtractSquares(tempboardPath, IO.TemporaryBoardExtractionPath, Size.Round(boardSize / 8f));
-
             Logger.Info<BoardVision>("Board squares have been extracted!");
 
-            Microsoft.ML.ITransformer model;
-
-            model = PiecePredictionEngine.LoadModel(IO.PieceModelPath);
-            var piecePredictions = PiecePredictionEngine.ClassifyPieces(model, pieceImagePaths);
+            IEnumerable<PiecePrediction> piecePredictions = new PiecePredictionEngine()
+                .LoadModel()
+                .BulkClassify(pieceImagePaths);
 
             Piece[] pieces = piecePredictions.Select(p => (Piece)Enum.Parse(typeof(Piece), p.PredictedLabel, true)).ToArray();
             Board board = new Board(pieces);
 
             Logger.Info<BoardVision>($"Piece prediction yielded a board with the FEN {board.ToFen()}.");
 
-            model = BoardOrientationPredictionEngine.LoadModel(IO.OrientationModelPath);
-            var orientationPrediction = BoardOrientationPredictionEngine.ClassifyBoard(model, board);
+            BoardOrientationPrediction orientationPrediction = new BoardOrientationPredictionEngine()
+                .LoadModel()
+                .Classify(board);
 
             Logger.Info<BoardVision>($"Board orientation prediction yield a result of '{(orientationPrediction.PredictedLabel ? "inverted" : "normal")}'.");
 
