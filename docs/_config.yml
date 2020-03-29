@@ -19,12 +19,16 @@
 # in the templates via {{ site.myvariable }}.
 
 title: Chesster
+logo: /assets/banner.png
 email: yiliansource@gmail.com
 description: >- # this means to ignore newlines until "baseurl:"
   A .NET Core library for recognizing chessboard positions using 
   neural networks.
 baseurl: "/chesster" # the subpath of your site, e.g. /blog
 url: "https://yiliansource.github.io/" # the base hostname & protocol for your site, e.g. http://example.com
+footer_content: >-
+   Copyright &copy; 2020 Ian Hornik. Distributed with an
+   <a href="https://github.com/yiliansource/chesster/tree/master/LICENSE">MIT license.</a>
 github_username: yiliansource
 
 # Build settings
