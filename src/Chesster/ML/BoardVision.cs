@@ -23,22 +23,40 @@ namespace Chesster.ML
                 throw new FileNotFoundException("An input file was not found at the given path.");
 
             Logger.Info<BoardVision>($"Initializing vision process for file {Path.GetFileName(imagePath)}.");
+            return PredictBoard(new Bitmap(imagePath));
+        }
+        public static Board PredictBoard(Bitmap image)
+        {
+            if (image == null)
+                throw new ArgumentNullException("image");
 
             // Search for and extract a board from the input image
-            string tempboardPath = IO.Combine(IO.TemporaryBoardExtractionPath, "tempboard.png");
-            if (!ExtractChessboard(imagePath, tempboardPath, out Size boardSize))
+            Bitmap chessboard = ExtractChessboard(image);
+            if (chessboard == null)
+            {
                 // If no chessboard was found, return null
                 return null;
+            }
 
             // Using the board size, extract the individual squares
-            string[] pieceImagePaths = ExtractSquares(tempboardPath, IO.TemporaryBoardExtractionPath, Size.Round(boardSize / 8f));
+            Bitmap[] squares = ExtractSquares(chessboard);
             Logger.Info<BoardVision>("Board squares have been extracted!");
+
+            string[] squarePaths = new string[64];
+            for (int i = 0; i < 64; i++)
+            {
+                string path = IO.Combine(IO.AssetRoot, $"{'a' + (i % 8)}{7 - i / 8}.png");
+                squares[i].Save(path);
+                squarePaths[i] = path;
+            }
 
             IEnumerable<PiecePrediction> piecePredictions = new PiecePredictionEngine()
                 .LoadModel()
-                .BulkClassify(pieceImagePaths);
+                .BulkClassify(squarePaths);
 
-            Piece[] pieces = piecePredictions.Select(p => (Piece)Enum.Parse(typeof(Piece), p.PredictedLabel, true)).ToArray();
+            Piece[] pieces = piecePredictions
+                .Select(p => (Piece)Enum.Parse(typeof(Piece), p.PredictedLabel, true))
+                .ToArray();
             Board board = new Board(pieces);
 
             Logger.Info<BoardVision>($"Piece prediction yielded a board with the FEN {board.ToFen()}.");
@@ -58,52 +76,49 @@ namespace Chesster.ML
             return board;
         }
 
-        private static bool ExtractChessboard(string input, string output, out Size boardSize)
+        private static Bitmap ExtractChessboard(Bitmap inputImage)
         {
-            BoardExtractor extractor = new BoardExtractor(input);
+            BoardExtractor extractor = new BoardExtractor(inputImage);
             Rectangle? boardRect = extractor.FindChessboard(BoardExtractor.BoardOption.Largest);
 
             if (boardRect == null)
             {
                 Logger.Info<BoardVision>("No board was found in the input image.");
-
-                boardSize = Size.Empty;
-                return false;
+                return null;
             }
 
 
             Logger.Info<BoardVision>($"Found a board ({boardRect.Value})!");
 
             Directory.CreateDirectory(IO.TemporaryBoardExtractionPath);
-            ExtractImageSection(input, output, boardRect.Value);
-
-            boardSize = boardRect.Value.Size;
-            return true;
+            return ExtractImageSection(inputImage, boardRect.Value);
         }
-        private static string[] ExtractSquares(string input, string outputDir, Size squareSize)
+        private static Bitmap[] ExtractSquares(Bitmap chessboard)
         {
-            string[] pieceImagePaths = new string[64];
+            Size squareSize = Size.Round(chessboard.Size / 8f);
+            Bitmap[] pieceImages = new Bitmap[64];
             for (int y = 0; y < 8; y++)
                 for (int x = 0; x < 8; x++)
                 {
-                    string imagePath = IO.Combine(outputDir, $"{new Square(x, 7 - y)}.png");
-                    ExtractImageSection(input, imagePath, new Rectangle(x * squareSize.Width, y * squareSize.Height, squareSize.Width, squareSize.Height));
-                    pieceImagePaths[(7 - y) * 8 + x] = imagePath;
+                    Bitmap result = ExtractImageSection(chessboard, 
+                        new Rectangle(x * squareSize.Width, y * squareSize.Height, squareSize.Width, squareSize.Height));
+
+                    pieceImages[(7 - y) * 8 + x] = result;
                 }
-            return pieceImagePaths;
+            return pieceImages;
         }
 
-        private static void ExtractImageSection(string sourceImage, string destImage, Rectangle sourceRect)
+        private static Bitmap ExtractImageSection(Bitmap sourceImage, Rectangle sourceRect)
         {
             Bitmap extracted = new Bitmap(sourceRect.Width, sourceRect.Height);
             using (Graphics g = Graphics.FromImage(extracted))
             {
-                g.DrawImage(Image.FromFile(sourceImage),
+                g.DrawImage(sourceImage,
                     new Rectangle(Point.Empty, sourceRect.Size),
                     sourceRect,
                     GraphicsUnit.Pixel);
             }
-            extracted.Save(destImage);
+            return extracted;
         }
     }
 }

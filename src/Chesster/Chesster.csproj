@@ -5,6 +5,18 @@
     <ApplicationIcon />
     <OutputType>Library</OutputType>
     <StartupObject></StartupObject>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Ian Hornik</Authors>
+    <Company>YilianSource</Company>
+    <Description>A .NET Core library with functionality to take a simple screenshot of a chessboard to a fully-evaluated position.</Description>
+    <Copyright>2020 Ian Hornik</Copyright>
+    <PackageProjectUrl>https://yiliansource.github.io/chesster/</PackageProjectUrl>
+    <PackageIcon>logo-inv.png</PackageIcon>
+    <PackageIconUrl />
+    <RepositoryUrl>https://github.com/YilianSource/chesster</RepositoryUrl>
+    <NeutralLanguage>en</NeutralLanguage>
+    <Version>0.1.1</Version>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,6 +47,14 @@
     </None>
     <None Update="assets\stockfish.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\..\social\logo-inv.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
     </None>
   </ItemGroup>
 

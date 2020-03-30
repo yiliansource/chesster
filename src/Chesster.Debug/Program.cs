@@ -30,7 +30,7 @@ namespace Chesster
             //    .CreateTrainedModel()
             //    .SaveModel();
             
-            Board board = BoardVision.PredictBoard(@"D:\YilianSource\chesster\chesster-core\verifying\example03.png");
+            Board board = BoardVision.PredictBoard(new System.Drawing.Bitmap(@"D:\YilianSource\chesster\chesster-core\verifying\example03.png"));
 
             Console.WriteLine(Evaluator.EvaluateWhite<StockfishEngine>(board).ToString(board));
             Console.WriteLine(Evaluator.EvaluateBlack<StockfishEngine>(board).ToString(board));

@@ -34,7 +34,7 @@ namespace Chesster.ML
         /// </summary>
         public bool AdaptColorDuringScan { get; set; } = true;
 
-        private readonly string _imagePath;
+        private readonly Bitmap _image;
 
         /// <summary>
         /// Creates an extractor for an image at the given path.
@@ -44,7 +44,11 @@ namespace Chesster.ML
             if (!File.Exists(imagePath))
                 throw new FileNotFoundException("An image does not exist at the given path.");
 
-            _imagePath = imagePath;
+            _image = new Bitmap(imagePath);
+        }
+        public BoardExtractor(Bitmap image)
+        {
+            _image = image ?? throw new ArgumentNullException("image");
         }
 
         /// <summary>
@@ -76,104 +80,101 @@ namespace Chesster.ML
         public Rectangle[] FindChessboards()
         {
             // TODO: Document, comment and optimize!
-            
+
             List<Rectangle> rectangles = new List<Rectangle>();
 
-            using (Bitmap bmp = new Bitmap(_imagePath))
+            for (int y = 0; y < _image.Height; y++)
             {
-                for (int y = 0; y < bmp.Height; y++)
+                for (int x = 0; x < _image.Width; x++)
                 {
-                    for (int x = 0; x < bmp.Width; x++)
+                    if (rectangles.Any(r => r.Contains(x, y)))
+                        continue;
+
+                    int segmentLength = 0;
+                    int cumulativeWidth = 0;
+                    int cumulativeHeight = 0;
+
+                    int startX = x;
+                    int startY = y;
+
+                    bool xSuccess = false;
+
+                    for (int i = 0; i < 8; i++)
                     {
-                        if (rectangles.Any(r => r.Contains(x, y)))
-                            continue;
-
-                        int segmentLength = 0;
-                        int cumulativeWidth = 0;
-                        int cumulativeHeight = 0;
-
-                        int startX = x;
-                        int startY = y;
-
-                        bool xSuccess = false;
-
-                        for (int i = 0; i < 8; i++)
+                        if (startX + segmentLength > _image.Width)
                         {
-                            if (startX + segmentLength > bmp.Width)
-                            {
-                                //Console.WriteLine($"Aborting scan after {i} iteration(s); out of image bounds (x).");
-                                break;
-                            }
-
-                            int length = ScanSegmentX(bmp, startX, y, MaxColorDelta, AdaptColorDuringScan);
-                            startX += length;
-                            cumulativeWidth += length;
-
-                            if (i == 0)
-                            {
-                                segmentLength = length;
-                                if (length < MinTileSize)
-                                {
-                                    //Console.WriteLine($"Aborting scan after {i} iteration(s); tile size too small ({length}).");
-                                    break;
-                                }
-                            }
-                            else
-                            {
-                                if (Math.Abs(1 - ((float)length / segmentLength)) > SegmentRatioTolerance)
-                                {
-                                    //Console.WriteLine($"Aborting scan after {i} iteration(s); invalid x segment length ({length}).");
-                                    break;
-                                }
-
-                                if (i == 7)
-                                {
-                                    xSuccess = true;
-                                }
-                            }
+                            //Console.WriteLine($"Aborting scan after {i} iteration(s); out of image bounds (x).");
+                            break;
                         }
 
-                        if (xSuccess)
+                        int length = ScanSegmentX(_image, startX, y, MaxColorDelta, AdaptColorDuringScan);
+                        startX += length;
+                        cumulativeWidth += length;
+
+                        if (i == 0)
                         {
-                            //Console.WriteLine($"Found success during x scan with length {segmentLength}");
-
-                            for (int i = 0; i < 8; i++)
+                            segmentLength = length;
+                            if (length < MinTileSize)
                             {
-                                if (startY + segmentLength > bmp.Height)
-                                {
-                                    //Console.WriteLine($"Aborting scan after {i} iteration(s); out of image bounds (y).");
-                                    break;
-                                }
-
-                                int length = ScanSegmentY(bmp, x, startY, MaxColorDelta, AdaptColorDuringScan);
-                                startY += length;
-                                cumulativeHeight += length;
-
-                                if (Math.Abs(1 - ((float)length / segmentLength)) > SegmentRatioTolerance)
-                                {
-                                    //Console.WriteLine($"Aborting scan after {i} iteration(s); invalid y segment length ({length}).");
-                                    break;
-                                }
-
-                                if (i == 7)
-                                {
-                                    // SUCCESS!
-                                    //Console.WriteLine("Found success during y scan aswell!");
-
-                                    rectangles.Add(new Rectangle(x, y, cumulativeWidth, cumulativeHeight));
-                                }
+                                //Console.WriteLine($"Aborting scan after {i} iteration(s); tile size too small ({length}).");
+                                break;
                             }
-
-                            x += 8 * segmentLength;
                         }
                         else
                         {
-                            x += segmentLength;
+                            if (Math.Abs(1 - ((float)length / segmentLength)) > SegmentRatioTolerance)
+                            {
+                                //Console.WriteLine($"Aborting scan after {i} iteration(s); invalid x segment length ({length}).");
+                                break;
+                            }
+
+                            if (i == 7)
+                            {
+                                xSuccess = true;
+                            }
                         }
-                        x--;
                     }
+
+                    if (xSuccess)
+                    {
+                        //Console.WriteLine($"Found success during x scan with length {segmentLength}");
+
+                        for (int i = 0; i < 8; i++)
+                        {
+                            if (startY + segmentLength > _image.Height)
+                            {
+                                //Console.WriteLine($"Aborting scan after {i} iteration(s); out of image bounds (y).");
+                                break;
+                            }
+
+                            int length = ScanSegmentY(_image, x, startY, MaxColorDelta, AdaptColorDuringScan);
+                            startY += length;
+                            cumulativeHeight += length;
+
+                            if (Math.Abs(1 - ((float)length / segmentLength)) > SegmentRatioTolerance)
+                            {
+                                //Console.WriteLine($"Aborting scan after {i} iteration(s); invalid y segment length ({length}).");
+                                break;
+                            }
+
+                            if (i == 7)
+                            {
+                                // SUCCESS!
+                                //Console.WriteLine("Found success during y scan aswell!");
+
+                                rectangles.Add(new Rectangle(x, y, cumulativeWidth, cumulativeHeight));
+                            }
+                        }
+
+                        x += 8 * segmentLength;
+                    }
+                    else
+                    {
+                        x += segmentLength;
+                    }
+                    x--;
                 }
-            }
+            } 
 
             return rectangles.ToArray();
         }
