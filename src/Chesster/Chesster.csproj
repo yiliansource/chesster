@@ -11,7 +11,7 @@
     <Description>A .NET Core library with functionality to take a simple screenshot of a chessboard to a fully-evaluated position.</Description>
     <Copyright>2020 Ian Hornik</Copyright>
     <PackageProjectUrl>https://yiliansource.github.io/chesster/</PackageProjectUrl>
-    <PackageIcon>logo-inv.png</PackageIcon>
+    <PackageIcon>Logo.png</PackageIcon>
     <PackageIconUrl />
     <RepositoryUrl>https://github.com/YilianSource/chesster</RepositoryUrl>
     <NeutralLanguage>en</NeutralLanguage>
@@ -48,11 +48,11 @@
     <None Update="assets\stockfish.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\..\social\logo-inv.png">
+    <None Include="..\..\LICENSE">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
-    <None Include="..\..\LICENSE">
+    <None Include="Logo.png">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
